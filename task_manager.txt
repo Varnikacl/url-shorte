@@ -1,0 +1,79 @@
+import argparse
+import json
+import os
+
+TASKS_FILE = 'tasks.json'
+
+def load_tasks():
+    if not os.path.exists(TASKS_FILE):
+        return []
+    with open(TASKS_FILE, 'r') as f:
+        return json.load(f)
+
+def save_tasks(tasks):
+    with open(TASKS_FILE, 'w') as f:
+        json.dump(tasks, f, indent=2)
+
+def add_task(description):
+    tasks = load_tasks()
+    tasks.append({"description": description, "done": False})
+    save_tasks(tasks)
+    print(f"✅ Task added: {description}")
+
+def list_tasks():
+    tasks = load_tasks()
+    if not tasks:
+        print("📭 No tasks found.")
+        return
+    for idx, task in enumerate(tasks, 1):
+        status = "[✔]" if task["done"] else "[ ]"
+        print(f"{idx}. {status} {task['description']}")
+
+def mark_done(index):
+    tasks = load_tasks()
+    try:
+        tasks[index]["done"] = True
+        save_tasks(tasks)
+        print(f"✅ Task {index+1} marked as done.")
+    except IndexError:
+        print("❌ Invalid task number.")
+
+def delete_task(index):
+    tasks = load_tasks()
+    try:
+        removed = tasks.pop(index)
+        save_tasks(tasks)
+        print(f"🗑 Deleted task: {removed['description']}")
+    except IndexError:
+        print("❌ Invalid task number.")
+
+def main():
+    parser = argparse.ArgumentParser(description="📝 Task Manager CLI")
+    subparsers = parser.add_subparsers(dest='command')
+
+    parser_add = subparsers.add_parser('add')
+    parser_add.add_argument('description', help='Task description')
+
+    subparsers.add_parser('list')
+
+    parser_done = subparsers.add_parser('done')
+    parser_done.add_argument('index', type=int, help='Task number to mark done')
+
+    parser_delete = subparsers.add_parser('delete')
+    parser_delete.add_argument('index', type=int, help='Task number to delete')
+
+    args = parser.parse_args()
+
+    if args.command == 'add':
+        add_task(args.description)
+    elif args.command == 'list':
+        list_tasks()
+    elif args.command == 'done':
+        mark_done(args.index - 1)
+    elif args.command == 'delete':
+        delete_task(args.index - 1)
+    else:
+        parser.print_help()
+
+if __name__ == '__main__':
+    main()
